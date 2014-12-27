@@ -9,7 +9,7 @@ public class World : MonoBehaviour
 	GameObject worldGO;
 	public Chunk[] Chunks;
 
-	void Awake()
+	void Start()
 	{
 		Chunks = new Chunk[ size * size * size ];
 
@@ -41,6 +41,8 @@ public class World : MonoBehaviour
 	{
 		var chunkGO = new GameObject( string.Format( "Chunk-{0},{1},{2}", x, y, z ) );
 		var chunkMB = chunkGO.AddComponent< Chunk >();
+
+		chunkMB.ConstructDummyChunk();
 
 		chunkMB.WorldPosition = new WorldPosition( x * Chunk.size, y * Chunk.size, z * Chunk.size );
 		

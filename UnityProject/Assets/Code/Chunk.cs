@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 public class Chunk : MonoBehaviour
 {
@@ -17,17 +18,27 @@ public class Chunk : MonoBehaviour
 	//	8*8*8 (*24 verts per cube). If it makes sense to optimise the number of verts per cube down, or do inner Chunk visibility culling, we could increase this size to 16.
 	
 	public const int size = 8;
+	public const int numCubes = size * size * size;
 	
-	public Cube[] Cubes = new Cube[ size * size * size ];
+	public Cube[] Cubes = new Cube[ numCubes ];
 
 	public WorldPosition WorldPosition;
 
 	MeshFilter meshFilter;
 	MeshRenderer meshRenderer;
 
+	public const int numVertices = numCubes * Cube.numFaces * Cube.numVerticesPerFace;
+	public const int numTrianglePoints = numCubes * Cube.numFaces * ( Cube.numTrianglesPerFace * Cube.numVerticiesPerTriangle );
+
+	public Vector3[] verticies = new Vector3[ numVertices ];
+	public Vector3[] normals = new Vector3[ numVertices ];
+	public Vector2[] uvs = new Vector2[ numVertices ];
+	public int[] triangles = new int[ numTrianglePoints ];
+	public Color[] colours = new Color[ numVertices ];
+
 	bool dirty = false;
 
-	void Awake()
+	public void ConstructDummyChunk()
 	{
 		meshFilter = gameObject.AddComponent< MeshFilter >();
 		meshRenderer = gameObject.AddComponent< MeshRenderer >();
@@ -43,21 +54,18 @@ public class Chunk : MonoBehaviour
 			{
 				for( int z = 0; z < size; z++ )
 				{
-					//if( x % 2 == 0 || y % 2 == 0 || z % 2 == 0 )
-					//	continue;
-
 					if( Random.value > 0.5f )
 						continue;
 
 					var testCube = new Cube();
 					testCube.Position = new WorldPosition( x, y, z );
-					testCube.GenerateData();
+
 					Cubes[ GetIndex( x, y, z ) ] = testCube;
 				}
 			}
 		}
 
-		dirty = true;
+		UpdateMeshData();
 	}
 
 	int GetIndex( int x, int y, int z )
@@ -65,49 +73,57 @@ public class Chunk : MonoBehaviour
 		return x + ( y * size ) + ( z * size * size );
 	}
 
-	void GenerateMesh()
+	void WriteToMeshFilter()
 	{
 		var mesh = new Mesh ();
 		mesh.name = "CubeRenderer Mesh";
 
-		var verticies = new List< Vector3 >();
-		var normals = new List< Vector3 >();
-		var uvs = new List< Vector2 >();
-		var triangles = new List< int >();
-		var colours = new List< Color >();
-		foreach( var cube in Cubes )
+		mesh.vertices = verticies;
+		mesh.normals = normals;
+		mesh.uv = uvs;
+		mesh.colors = colours;
+		mesh.SetTriangles( triangles, 0 );
+		
+		meshFilter.sharedMesh = mesh;
+		
+		dirty = false;
+	}
+
+	void UpdateMeshData()
+	{
+		for( int cubeIndex = 0; cubeIndex < Cubes.Length; cubeIndex++ )
 		{
-			if( cube == null )
+			Cube myCube = Cubes[ cubeIndex ];
+
+			if( myCube == null )
 				continue;
 
-			int vertexOffset = verticies.Count;
+			int cubeVertexStart;
+			int cubeTriangleStart;
 
-			verticies.AddRange( cube.Verticies );
-			uvs.AddRange( cube.UVs );
-			normals.AddRange( cube.Normals );
-			colours.AddRange( cube.Colours );
+			GetCubeOffsets( cubeIndex, out cubeVertexStart, out cubeTriangleStart );
 
-			for( int index = 0; index < cube.Triangles.Length; index++ )
-			{
-				triangles.Add( cube.Triangles[ index ] + vertexOffset );
-			}
+			myCube.WriteData( this, cubeVertexStart, cubeTriangleStart );
 		}
 
-		mesh.vertices = verticies.ToArray();
-		mesh.normals = normals.ToArray();
-		mesh.uv = uvs.ToArray();
-		mesh.colors = colours.ToArray();
-		mesh.SetTriangles( triangles.ToArray(), 0 );
+		dirty = true;
+	}
 
-		meshFilter.sharedMesh = mesh;
+	void GetCubeOffsets( int cubeIndex, out int cubeVertexStart, out int cubeTriangleStart )
+	{
+		cubeVertexStart = cubeIndex * ( Cube.numFaces * Cube.numVerticesPerFace );
+		cubeTriangleStart = cubeIndex * ( Cube.numFaces * ( Cube.numTrianglesPerFace * Cube.numVerticiesPerTriangle ) );
+	}
 
-		dirty = false;
+	public Cube GetCubeFromVertexIndex( int vertexIndex )
+	{
+		return Cubes[ vertexIndex / ( Cube.numFaces * Cube.numVerticesPerFace ) ];
 	}
 
 	void Update()
 	{
 		if( dirty )
-			GenerateMesh();
+			WriteToMeshFilter();
 	}
 
 	public Cube GetCubeAtChunkPosition( int worldX, int worldY, int worldZ )

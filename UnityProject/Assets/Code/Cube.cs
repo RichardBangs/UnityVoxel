@@ -8,12 +8,11 @@ public class Cube
 	public Quaternion Rotation;
 
 	public Vector3 Scale = Vector3.one;
-
-	public Vector3[] Verticies { get; private set; }
-	public Vector3[] Normals { get; private set; }
-	public Vector2[] UVs { get; private set; }
-	public int[] Triangles { get; private set; }
-	public Color[] Colours { get; private set; }
+	
+	public const int numFaces = 6;
+	public const int numVerticesPerFace = 4;
+	public const int numVerticiesPerTriangle = 3;
+	public const int numTrianglesPerFace = 2;
 
 	public int TriangleCount
 	{
@@ -26,22 +25,8 @@ public class Cube
 		}
 	}
 
-	void UpdateVerticies()
+	public void WriteData( Chunk chunk, int cubeVertexStart, int cubeTriangleStart )
 	{
-		const int numFaces = 6;
-		const int numVerticesPerFace = 4;
-		const int numVerticiesPerTriangle = 3;
-		const int numTrianglesPerFace = 2;
-
-		int vertexCount = numFaces * numVerticesPerFace;
-		int indexCount = numFaces * numTrianglesPerFace * numVerticiesPerTriangle;
-
-		Verticies = new Vector3[ vertexCount ];
-		Normals = new Vector3[ vertexCount ];
-		UVs = new Vector2[ vertexCount ];
-		Triangles = new int[ indexCount ];
-		Colours = new Color[ vertexCount ];
-
 		for( int face = 0; face < numFaces; face++ )
 		{
 			for( int vertex = 0; vertex < numVerticesPerFace; vertex++ )
@@ -56,38 +41,33 @@ public class Cube
 					rotationAngle = ( face * 180.0f ) + 90.0f;
 				}
 
-				int vertexIndex = ( face * numVerticesPerFace ) + vertex;
+				int vertexIndex = ( face * numVerticesPerFace ) + vertex + cubeVertexStart;
 
 				var rotation = Quaternion.AngleAxis( rotationAngle, rotationAxis );
-				Verticies[ vertexIndex ] = Position.ToVector3() - ( rotation * new Vector3( Scale.x * axis.x, Scale.y * axis.y, Scale.z * axis.z ) ) + ( rotation * Vector3.forward * 0.5f );
+				chunk.verticies[ vertexIndex ] = Position.ToVector3() - ( rotation * new Vector3( Scale.x * axis.x, Scale.y * axis.y, Scale.z * axis.z ) ) + ( rotation * Vector3.forward * 0.5f );
 
-				Normals[ vertexIndex ] = rotation * Vector3.forward;
+				chunk.normals[ vertexIndex ] = rotation * Vector3.forward;
 			}
 
-			int vertexOffset = face * numVerticesPerFace;
+			int vertexOffset = ( face * numVerticesPerFace ) + cubeVertexStart;
 
 			CubeDefinition cubeDefinition = CubeDefinitionManager.GetDefinition( "Grass" );
 
-			cubeDefinition.GetTextureCoords( face,
-											 out UVs[ vertexOffset + 0 ],
-			                                 out UVs[ vertexOffset + 1 ],
-			                                 out UVs[ vertexOffset + 2 ],
-			                                 out UVs[ vertexOffset + 3 ] );
+			cubeDefinition.GetTextureCoords( 	face,
+											 	out chunk.uvs[ vertexOffset + 0 ],
+			                                	out chunk.uvs[ vertexOffset + 1 ],
+			                                	out chunk.uvs[ vertexOffset + 2 ],
+			                                	out chunk.uvs[ vertexOffset + 3 ] );
 
-			int triangleOffset = face * ( numTrianglesPerFace * numVerticiesPerTriangle );
+			int triangleOffset = ( face * ( numTrianglesPerFace * numVerticiesPerTriangle ) ) + cubeTriangleStart;
 
-			Triangles[ triangleOffset + 0 ] = vertexOffset + 0;
-			Triangles[ triangleOffset + 1 ] = vertexOffset + 1;
-			Triangles[ triangleOffset + 2 ] = vertexOffset + 2;
+			chunk.triangles[ triangleOffset + 0 ] = vertexOffset + 0;
+			chunk.triangles[ triangleOffset + 1 ] = vertexOffset + 1;
+			chunk.triangles[ triangleOffset + 2 ] = vertexOffset + 2;
 
-			Triangles[ triangleOffset + 3 ] = vertexOffset + 3;
-			Triangles[ triangleOffset + 4 ] = vertexOffset + 2;
-			Triangles[ triangleOffset + 5 ] = vertexOffset + 1;
+			chunk.triangles[ triangleOffset + 3 ] = vertexOffset + 3;
+			chunk.triangles[ triangleOffset + 4 ] = vertexOffset + 2;
+			chunk.triangles[ triangleOffset + 5 ] = vertexOffset + 1;
 		}
-	}
-	
-	public void GenerateData()
-	{
-		UpdateVerticies();
 	}
 }

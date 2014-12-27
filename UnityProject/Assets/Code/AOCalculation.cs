@@ -14,43 +14,42 @@ public static class AOCalculation
 	{
 		WorldPosition chunkPosition = chunk.WorldPosition;
 
-		foreach( var cube in chunk.Cubes )
+		for( int index = 0; index < chunk.verticies.Length; index++ )
 		{
+			Cube cube = chunk.GetCubeFromVertexIndex( index );
+
 			if( cube == null )
 				continue;
 
-			for( int index = 0; index < cube.Verticies.Length; index++ )
+			float accumulatedLight = 0.0f;
+
+			//Vector3 direction = ( chunk.verticies[ index ] - cube.Position.ToVector3() ).normalized;
+			Vector3 normal = chunk.normals[ index ].normalized;
+
+			const int distanceMax = 2;
+			for( int distance = 1; distance < distanceMax; distance++ )
 			{
-				float accumulatedLight = 0.0f;
+				WorldPosition midPoint = cube.Position + ( GetDeltaWorldPositionFromVector3( normal ) * distance );
 
-				Vector3 direction = ( cube.Verticies[ index ] - cube.Position.ToVector3() ).normalized;
-				Vector3 normal = cube.Normals[ index ].normalized;
+				WorldPosition axisX;
+				WorldPosition axisZ;
+				GetOtherAxis( normal, out axisX, out axisZ );
 
-				const int distanceMax = 2;
-				for( int distance = 1; distance < distanceMax; distance++ )
+				for( int xOffset = -distance; xOffset <= distance; xOffset++ )
 				{
-					WorldPosition midPoint = cube.Position + ( GetDeltaWorldPositionFromVector3( normal ) * distance );
-
-					WorldPosition axisX;
-					WorldPosition axisZ;
-					GetOtherAxis( normal, out axisX, out axisZ );
-
-					for( int xOffset = -distance; xOffset <= distance; xOffset++ )
+					for( int zOffset = -distance; zOffset <= distance; zOffset++ )
 					{
-						for( int zOffset = -distance; zOffset <= distance; zOffset++ )
-						{
-							WorldPosition iterationPosition = midPoint + ( axisX * xOffset ) + ( axisZ * zOffset );
+						WorldPosition iterationPosition = midPoint + ( axisX * xOffset ) + ( axisZ * zOffset );
 
-							if( world.WorldCoordinatesToCube( iterationPosition + chunkPosition ) == null )
-							{
-								accumulatedLight += 0.1f;
-							}
+						if( world.WorldCoordinatesToCube( iterationPosition + chunkPosition ) == null )
+						{
+							accumulatedLight += 0.1f;
 						}
 					}
 				}
-
-				cube.Colours[ index ] = new Color( accumulatedLight, accumulatedLight, accumulatedLight );
 			}
+
+			chunk.colours[ index ] = new Color( accumulatedLight, accumulatedLight, accumulatedLight );
 		}
 	}
 
