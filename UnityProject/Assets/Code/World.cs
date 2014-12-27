@@ -4,37 +4,92 @@ using System.Collections.Generic;
 
 public class World : MonoBehaviour
 {
-	List< Chunk > Chunks = new List< Chunk >();
+	public const int size = 4;
+
+	GameObject worldGO;
+	public Chunk[] Chunks;
 
 	void Awake()
 	{
-		var worldGO = new GameObject( "World" );
+		Chunks = new Chunk[ size * size * size ];
 
-		int size = 16;
+		worldGO = new GameObject( "World" );
 
+		GenerateWorld();
+		FullWorldAOBake();
+	}
+
+	void GenerateWorld()
+	{
 		for( int x = 0; x < size; x++ )
 		{
-			for( int y = 0; y < 1; y++ )
+			for( int y = 0; y < size; y++ )
 			{
 				for( int z = 0; z < size; z++ )
 				{
-					var chunkGO = CreateChunk( x, y, z );
-					
-					chunkGO.transform.parent = worldGO.transform;
+					var chunk = CreateChunk( x, y, z );
 
-					Chunks.Add( chunkGO.GetComponent< Chunk >() );
+					chunk.transform.parent = worldGO.transform;
+					
+					Chunks[ GetChunkIndex( x, y, z ) ] = chunk;
 				}
 			}
 		}
 	}
 
-	GameObject CreateChunk( int x, int y, int z )
+	Chunk CreateChunk( int x, int y, int z )
 	{
 		var chunkGO = new GameObject( string.Format( "Chunk-{0},{1},{2}", x, y, z ) );
-		chunkGO.AddComponent< Chunk >();
+		var chunkMB = chunkGO.AddComponent< Chunk >();
 
+		chunkMB.WorldPosition = new WorldPosition( x * Chunk.size, y * Chunk.size, z * Chunk.size );
+		
 		chunkGO.transform.localPosition = new Vector3( x * Chunk.size, y * Chunk.size, z * Chunk.size );
+		
+		return chunkMB;
+	}
 
-		return chunkGO;
+	void FullWorldAOBake()
+	{
+		AOCalculation.Initialise( this );
+
+		foreach( var chunk in Chunks )
+		{
+			AOCalculation.ExecuteOnChunk( chunk );
+		}
+	}
+
+	int GetChunkIndex( int x, int y, int z )
+	{
+		return x + ( y * size ) + ( z * size * size );
+	}
+
+	public Chunk WorldCoordinatesToChunk( WorldPosition worldPosition )
+	{
+		if( worldPosition.WorldX < 0 || worldPosition.WorldY < 0 || worldPosition.WorldZ < 0 )
+			return null;
+
+		int chunkX = worldPosition.WorldX / Chunk.size;
+		int chunkY = worldPosition.WorldY / Chunk.size;
+		int chunkZ = worldPosition.WorldZ / Chunk.size;
+
+		if( chunkX >= size || chunkY >= size || chunkZ >= size )
+			return null;
+
+		return Chunks[ GetChunkIndex( chunkX, chunkY, chunkZ ) ];
+	}
+
+	public Cube WorldCoordinatesToCube( WorldPosition worldPosition )
+	{
+		var chunk = WorldCoordinatesToChunk( worldPosition );
+
+		if( chunk == null )
+			return null;
+
+		int chunkX = worldPosition.WorldX % Chunk.size;
+		int chunkY = worldPosition.WorldY % Chunk.size;
+		int chunkZ = worldPosition.WorldZ % Chunk.size;
+
+		return chunk.GetCubeAtChunkPosition( chunkX, chunkY, chunkZ );
 	}
 }

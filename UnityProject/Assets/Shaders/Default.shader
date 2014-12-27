@@ -42,11 +42,11 @@
 		        o.pos = mul (UNITY_MATRIX_MVP, v.vertex);
 		        
 		        //	Lighting.
-		        float lightValue = UNITY_LIGHTMODEL_AMBIENT.x;		//	Ambient.
-		        lightValue += max( 0.0f, dot( v.normal, normalize( WorldSpaceLightDir( v.vertex ) ) ) );	//	Diffuse.
+		        float3 ambientLighting = v.color;		//	Ambient from vertex colour.
+		        float diffuseLighting = max( 0.0f, dot( v.normal, normalize( WorldSpaceLightDir( v.vertex ) ) ) ) * 0.5f;
 		        
 		        //	Apply Final Colour (combination of v.color - precalculated Ambient Occulsion lighting, and our calculated diffuse above).
-		        o.color = v.color * lightValue;
+		        o.color = ambientLighting + diffuseLighting.xxx;
 		        
 		        o.uv = v.uv;
 		        

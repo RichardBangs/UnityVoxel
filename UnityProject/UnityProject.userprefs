@@ -1,0 +1,16 @@
+﻿<Properties>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Code\Cube.cs">
+    <Files>
+      <File FileName="Assets\Code\World.cs" Line="12" Column="14" />
+      <File FileName="Assets\Code\Cube.cs" Line="70" Column="4" />
+      <File FileName="Assets\Code\AOCalculation.cs" Line="39" Column="1" />
+      <File FileName="Assets\Code\WorldPosition.cs" Line="22" Column="83" />
+      <File FileName="Assets\Code\Chunk.cs" Line="34" Column="1" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>

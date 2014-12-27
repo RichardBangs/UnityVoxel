@@ -20,6 +20,8 @@ public class Chunk : MonoBehaviour
 	
 	public Cube[] Cubes = new Cube[ size * size * size ];
 
+	public WorldPosition WorldPosition;
+
 	MeshFilter meshFilter;
 	MeshRenderer meshRenderer;
 
@@ -33,18 +35,23 @@ public class Chunk : MonoBehaviour
 		var material = Resources.Load< Material >( "Cube" );
 		meshRenderer.sharedMaterial = material;
 
+		//	TODO: Remove me - just here for testing purposes.
+		//Random.seed = 42;
 		for( int x = 0; x < size; x++ )
 		{
 			for( int y = 0; y < size; y++ )
 			{
 				for( int z = 0; z < size; z++ )
 				{
+					//if( x % 2 == 0 || y % 2 == 0 || z % 2 == 0 )
+					//	continue;
+
 					if( Random.value > 0.5f )
 						continue;
 
 					var testCube = new Cube();
-					testCube.Position = new Vector3( x, y, z );
-					testCube.Update();
+					testCube.Position = new WorldPosition( x, y, z );
+					testCube.GenerateData();
 					Cubes[ GetIndex( x, y, z ) ] = testCube;
 				}
 			}
@@ -58,7 +65,7 @@ public class Chunk : MonoBehaviour
 		return x + ( y * size ) + ( z * size * size );
 	}
 
-	void UpdateMesh()
+	void GenerateMesh()
 	{
 		var mesh = new Mesh ();
 		mesh.name = "CubeRenderer Mesh";
@@ -100,6 +107,11 @@ public class Chunk : MonoBehaviour
 	void Update()
 	{
 		if( dirty )
-			UpdateMesh();
+			GenerateMesh();
+	}
+
+	public Cube GetCubeAtChunkPosition( int worldX, int worldY, int worldZ )
+	{
+		return Cubes[ GetIndex( worldX, worldY, worldZ ) ];
 	}
 }

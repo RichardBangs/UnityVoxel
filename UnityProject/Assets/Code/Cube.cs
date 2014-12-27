@@ -1,13 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+
 public class Cube
 {
-	public Vector3 Position;
+	public WorldPosition Position;
 	public Quaternion Rotation;
 
 	public Vector3 Scale = Vector3.one;
-
 
 	public Vector3[] Verticies { get; private set; }
 	public Vector3[] Normals { get; private set; }
@@ -35,14 +35,12 @@ public class Cube
 
 		int vertexCount = numFaces * numVerticesPerFace;
 		int indexCount = numFaces * numTrianglesPerFace * numVerticiesPerTriangle;
-		
 
 		Verticies = new Vector3[ vertexCount ];
 		Normals = new Vector3[ vertexCount ];
 		UVs = new Vector2[ vertexCount ];
 		Triangles = new int[ indexCount ];
 		Colours = new Color[ vertexCount ];
-
 
 		for( int face = 0; face < numFaces; face++ )
 		{
@@ -61,28 +59,20 @@ public class Cube
 				int vertexIndex = ( face * numVerticesPerFace ) + vertex;
 
 				var rotation = Quaternion.AngleAxis( rotationAngle, rotationAxis );
-				Verticies[ vertexIndex ] = Position - ( rotation * new Vector3( Scale.x * axis.x, Scale.y * axis.y, Scale.z * axis.z ) ) + ( rotation * Vector3.forward * 0.5f );
+				Verticies[ vertexIndex ] = Position.ToVector3() - ( rotation * new Vector3( Scale.x * axis.x, Scale.y * axis.y, Scale.z * axis.z ) ) + ( rotation * Vector3.forward * 0.5f );
 
 				Normals[ vertexIndex ] = rotation * Vector3.forward;
-
-				Colours[ vertexIndex ] = Color.white;
 			}
 
 			int vertexOffset = face * numVerticesPerFace;
 
-			const int numPackedTexturesInEachAxis = 16;
-			const float singleTextureSizeUV = 1.0f / numPackedTexturesInEachAxis;
-			Vector2 baseUV;
+			CubeDefinition cubeDefinition = CubeDefinitionManager.GetDefinition( "Grass" );
 
-			if( face == 5 )
-				baseUV = new Vector2( 0 * singleTextureSizeUV, 15 * singleTextureSizeUV );
-			else
-				baseUV = new Vector2( 2 * singleTextureSizeUV, 15 * singleTextureSizeUV );
-
-			UVs[ vertexOffset + 0 ] = baseUV;
-			UVs[ vertexOffset + 1 ] = baseUV + new Vector2( singleTextureSizeUV, 0.0f );
-			UVs[ vertexOffset + 2 ] = baseUV + new Vector2( 0.0f, singleTextureSizeUV );
-			UVs[ vertexOffset + 3 ] = baseUV + new Vector2( singleTextureSizeUV, singleTextureSizeUV );
+			cubeDefinition.GetTextureCoords( face,
+											 out UVs[ vertexOffset + 0 ],
+			                                 out UVs[ vertexOffset + 1 ],
+			                                 out UVs[ vertexOffset + 2 ],
+			                                 out UVs[ vertexOffset + 3 ] );
 
 			int triangleOffset = face * ( numTrianglesPerFace * numVerticiesPerTriangle );
 
@@ -96,7 +86,7 @@ public class Cube
 		}
 	}
 	
-	public void Update()
+	public void GenerateData()
 	{
 		UpdateVerticies();
 	}
